@@ -6,69 +6,116 @@ from PyQt5.QtWidgets import *
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, bg_img, videoFilePath):
+    def __init__(self, bgImg, videoFilePath):
         QMainWindow.__init__(self)
-        self.bg_img = bg_img
+        # declare vars
+        self.bgImg = bgImg
         self.videoFilePath = videoFilePath
-        self.setWindowTitle('Keying Tool')
         self.cap = cv2.VideoCapture(self.videoFilePath)
-        self.FPS = int(self.cap.get(cv2.CAP_PROP_FPS))
+        self.FPS = self.cap.get(cv2.CAP_PROP_FPS)
         self.numFrames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-        # timeline slider
-        def createSlider(minValue, maxValue, value, singleStep, tickInterval, tickPosition):
+        def addSlider(label, minValue, maxValue, value):
             slider = QSlider(QtCore.Qt.Horizontal, self)
             slider.setMinimum(minValue)
             slider.setMaximum(maxValue)
             slider.setValue(value)
-            slider.setSingleStep(singleStep)
-            slider.setTickInterval(tickInterval)
-            slider.setTickPosition(tickPosition)
+            slider.setSingleStep(1)
+            slider.setTickInterval(1)
+            slider.setTickPosition(1)
+            sliderLabel = QLabel(label)
+            sliderLabel.setMinimumWidth(110)
+            sliderLayout = QHBoxLayout()
+            sliderLayout.setContentsMargins(0, 2, 0, 2)
+            sliderLayout.addWidget(sliderLabel)
+            sliderLayout.addWidget(slider)
+            vBoxLayout.addLayout(sliderLayout)
+            slider.valueChanged.connect(self.showFrame)
             return slider
 
-        self.timelineSlider = createSlider(0, self.numFrames - 1, 0, 1, 1, 1)
-        self.timelineSlider.setWindowTitle('Timeline')
-
-        # create hsv sliders
-        self.hLowSlider = createSlider(0, 255, 100, 1, 1, 1)
-        self.hUpperSlider = createSlider(0, 255, 150, 1, 1, 1)
-        self.sLowSlider = createSlider(0, 255, 0, 1, 1, 1)
-        self.sUpperSlider = createSlider(0, 255, 255, 1, 1, 1)
-        self.vLowSlider = createSlider(0, 255, 0, 1, 1, 1)
-        self.vUpperSlider = createSlider(0, 255, 255, 1, 1, 1)
-
-        self.hLowSlider.valueChanged.connect(self.showFrame)
-        self.hUpperSlider.valueChanged.connect(self.showFrame)
-        self.sLowSlider.valueChanged.connect(self.showFrame)
-        self.sUpperSlider.valueChanged.connect(self.showFrame)
-        self.vLowSlider.valueChanged.connect(self.showFrame)
-        self.vUpperSlider.valueChanged.connect(self.showFrame)
-        self.timelineSlider.valueChanged.connect(self.showFrame)
-
-        self.submitButton = QPushButton('Render Matte')
-        self.submitButton.clicked.connect(self.writeMask)
-
-        self.videoFrame = QLabel()
-
         mainWidget = QWidget()
+        mainWidget.setContentsMargins(3, 0, 3, 3)
         mainWidget.setMinimumSize(1920 / 2, 1080 / 2)
-
         self.setCentralWidget(mainWidget)
 
         vBoxLayout = QVBoxLayout()
+        vBoxLayout.setSpacing(1)
+        vBoxLayout.setContentsMargins(0, 0, 0, 0)
+
+        titleBarLayout = QHBoxLayout()
+        titleBarLayout.setSpacing(0)
+        titleBarLayout.setContentsMargins(0, 0, 0, 0)
+        spacer = QSpacerItem(40, 40, QSizePolicy.MinimumExpanding)
+        titleBarLayout.addSpacerItem(spacer)
+        # sizegrip = QSizeGrip(self)
+
+        titleBarWidget = QWidget()
+        titleBarWidget.setMaximumHeight(20)
+        titleBarWidget.setContentsMargins(0, 0, 0, 0)
+        vBoxLayout.addWidget(titleBarWidget)
+
+        titleBarWidget.setLayout(titleBarLayout)
+
         mainWidget.setLayout(vBoxLayout)
 
+        self.videoFrame = QLabel()
         vBoxLayout.addWidget(self.videoFrame)
-        vBoxLayout.addWidget(self.timelineSlider)
-        vBoxLayout.addWidget(self.hLowSlider)
-        vBoxLayout.addWidget(self.hUpperSlider)
-        vBoxLayout.addWidget(self.sLowSlider)
-        vBoxLayout.addWidget(self.sUpperSlider)
-        vBoxLayout.addWidget(self.vLowSlider)
-        vBoxLayout.addWidget(self.vUpperSlider)
-        vBoxLayout.addWidget(self.submitButton)
+
+        # add sliders
+        self.timelineSlider = addSlider('Timeline', 0, self.numFrames - 1, 0)
+        self.hLowSlider = addSlider('Hue Low: ', 0, 255, 20)
+        self.hUpperSlider = addSlider('Hue Upper: ', 0, 255, 150)
+        self.sLowSlider = addSlider('Saturation Low: ', 0, 255, 0)
+        self.sUpperSlider = addSlider('Saturation Upper: ', 0, 255, 255)
+        self.vLowSlider = addSlider('Velocity Low: ', 0, 255, 0)
+        self.vUpperSlider = addSlider('Velocity Upper: ', 0, 255, 255)
+
+        # title bar btns
+        self.windowSizeBtn = QPushButton()
+        self.windowSizeBtn.setMinimumSize(12, 12)
+        self.windowSizeBtn.setContentsMargins(0, 0, 0, 0)
+        self.windowSizeBtn.clicked.connect(self.changeWindowSize)
+        self.windowSizeBtn.setIcon(QtGui.QIcon('icons/expand.png'))
+        self.windowSizeBtn.setIconSize(QtCore.QSize(15, 15))
+
+        self.closeBtn = QPushButton()
+        self.closeBtn.setContentsMargins(0, 0, 0, 0)
+        self.closeBtn.clicked.connect(self.close)
+        self.closeBtn.setIcon(QtGui.QIcon('icons/close.png'))
+        self.closeBtn.setIconSize(QtCore.QSize(15, 15))
+
+        self.minimizeBtn = QPushButton()
+        self.minimizeBtn.setContentsMargins(0, 0, 0, 0)
+        self.minimizeBtn.clicked.connect(self.showMinimized)
+        self.minimizeBtn.setIcon(QtGui.QIcon('icons/minimize.png'))
+        self.minimizeBtn.setIconSize(QtCore.QSize(15, 15))
+
+        # submit/render btn
+        self.submitButton = QPushButton('Render Matte')
+        self.submitButton.clicked.connect(self.writeMask)
+
+        titleBarLayout.addWidget(self.minimizeBtn)
+        titleBarLayout.addWidget(self.windowSizeBtn)
+        titleBarLayout.addWidget(self.closeBtn)
+        # titleBarLayout.addWidget(sizegrip)
 
         self.showFrame()
+
+    def mousePressEvent(self, event):
+        self.offset = event.pos()
+
+    def mouseMoveEvent(self, event):
+        x = event.globalX()
+        y = event.globalY()
+        x_w = self.offset.x()
+        y_w = self.offset.y()
+        self.move(x - x_w, y - y_w)
+
+    def changeWindowSize(self):
+        if self.isMaximized():
+            self.showNormal()
+        else:
+            self.showMaximized()
 
     def writeMask(self):
         cap = self.cap
@@ -103,7 +150,7 @@ class MainWindow(QMainWindow):
 
     def showFrame(self):
         mask = self.getFrameMask()
-        r, g, b = cv2.split(self.bg_img)
+        r, g, b = cv2.split(self.bgImg)
         b &= mask
         g &= mask
         r &= mask
