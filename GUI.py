@@ -3,17 +3,36 @@ from pathlib import Path
 import cv2
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import *
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
 
 
 class MainWindow(QMainWindow):
     def __init__(self, bgImg, videoFilePath):
-        QMainWindow.__init__(self)
-        # declare vars
+        # QMainWindow.__init__(self)
+        super().__init__()
         self.bgImg = bgImg
         self.videoFilePath = videoFilePath
         self.cap = cv2.VideoCapture(self.videoFilePath)
         self.FPS = self.cap.get(cv2.CAP_PROP_FPS)
         self.numFrames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+        class Label(QLabel):
+            def __init__(self, img):
+                super(Label, self).__init__()
+                self.setFrameStyle(QFrame.StyledPanel)
+                self.pixmap = QtGui.QPixmap(img)
+
+            def paintEvent(self, event):
+                size = self.size()
+                painter = QtGui.QPainter(self)
+                point = QtCore.QPoint(0, 0)
+                scaledPix = self.pixmap.scaled(size, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation)
+                # start painting the label from left upper corner
+                point.setX((size.width() - scaledPix.width()) / 2)
+                point.setY((size.height() - scaledPix.height()) / 2)
+                print(point.x(), ' ', point.y())
+                painter.drawPixmap(point, scaledPix)
 
         def addSlider(label, minValue, maxValue, value):
             slider = QSlider(QtCore.Qt.Horizontal, self)
@@ -47,7 +66,7 @@ class MainWindow(QMainWindow):
         titleBarLayout.setContentsMargins(0, 0, 0, 0)
         spacer = QSpacerItem(40, 40, QSizePolicy.MinimumExpanding)
         titleBarLayout.addSpacerItem(spacer)
-        # sizegrip = QSizeGrip(self)
+        QSizeGrip(self)
 
         titleBarWidget = QWidget()
         titleBarWidget.setMaximumHeight(20)
@@ -58,7 +77,9 @@ class MainWindow(QMainWindow):
 
         mainWidget.setLayout(vBoxLayout)
 
+        # self.videoFrame = QLabel()
         self.videoFrame = QLabel()
+
         vBoxLayout.addWidget(self.videoFrame)
 
         # add sliders
@@ -97,7 +118,6 @@ class MainWindow(QMainWindow):
         titleBarLayout.addWidget(self.minimizeBtn)
         titleBarLayout.addWidget(self.windowSizeBtn)
         titleBarLayout.addWidget(self.closeBtn)
-        # titleBarLayout.addWidget(sizegrip)
 
         self.showFrame()
 
@@ -143,7 +163,7 @@ class MainWindow(QMainWindow):
         cap.set(1, self.timelineSlider.value())
         ret, frame = cap.read()
         self.image = frame
-        hsv_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
+        hsv_img = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv_img, (self.hLowSlider.value(), self.sLowSlider.value(), self.vLowSlider.value()),
                            (self.hUpperSlider.value(), self.sUpperSlider.value(), self.vUpperSlider.value()))
         return mask
@@ -167,4 +187,6 @@ class MainWindow(QMainWindow):
 
         image = QtGui.QImage(result.data, result.shape[1], result.shape[0],
                              QtGui.QImage.Format_RGB888).rgbSwapped()
-        self.videoFrame.setPixmap(QtGui.QPixmap.fromImage(image))
+        frameSize = self.videoFrame.size()
+        self.videoFrame.setPixmap(QtGui.QPixmap(image).scaled(1920, 1080,
+                                                               QtCore.Qt.KeepAspectRatio))
