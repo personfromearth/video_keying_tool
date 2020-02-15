@@ -23,16 +23,16 @@ class MainWindow(QMainWindow):
                 self.setFrameStyle(QFrame.StyledPanel)
                 self.pixmap = QtGui.QPixmap(img)
 
-            def paintEvent(self, event):
-                size = self.size()
-                painter = QtGui.QPainter(self)
-                point = QtCore.QPoint(0, 0)
-                scaledPix = self.pixmap.scaled(size, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation)
-                # start painting the label from left upper corner
-                point.setX((size.width() - scaledPix.width()) / 2)
-                point.setY((size.height() - scaledPix.height()) / 2)
-                print(point.x(), ' ', point.y())
-                painter.drawPixmap(point, scaledPix)
+            # def paintEvent(self, event):
+            #     size = self.size()
+            #     painter = QtGui.QPainter(self)
+            #     point = QtCore.QPoint(0, 0)
+            #     scaledPix = self.pixmap.scaled(size, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation)
+            #     # start painting the label from left upper corner
+            #     point.setX((size.width() - scaledPix.width()) / 2)
+            #     point.setY((size.height() - scaledPix.height()) / 2)
+            #     print(point.x(), ' ', point.y())
+            #     painter.drawPixmap(point, scaledPix)
 
         def addSlider(label, minValue, maxValue, value):
             slider = QSlider(QtCore.Qt.Horizontal, self)
@@ -48,7 +48,8 @@ class MainWindow(QMainWindow):
             sliderLayout.setContentsMargins(0, 2, 0, 2)
             sliderLayout.addWidget(sliderLabel)
             sliderLayout.addWidget(slider)
-            vBoxLayout.addLayout(sliderLayout)
+            # mainVBoxLayout.addLayout(sliderLayout)
+            slidersLayout.addLayout(sliderLayout)
             slider.valueChanged.connect(self.showFrame)
             return slider
 
@@ -57,9 +58,9 @@ class MainWindow(QMainWindow):
         mainWidget.setMinimumSize(1920 / 2, 1080 / 2)
         self.setCentralWidget(mainWidget)
 
-        vBoxLayout = QVBoxLayout()
-        vBoxLayout.setSpacing(1)
-        vBoxLayout.setContentsMargins(0, 0, 0, 0)
+        mainVBoxLayout = QVBoxLayout()
+        mainVBoxLayout.setSpacing(1)
+        mainVBoxLayout.setContentsMargins(0, 0, 0, 0)
 
         titleBarLayout = QHBoxLayout()
         titleBarLayout.setSpacing(0)
@@ -67,20 +68,30 @@ class MainWindow(QMainWindow):
         spacer = QSpacerItem(40, 40, QSizePolicy.MinimumExpanding)
         titleBarLayout.addSpacerItem(spacer)
         QSizeGrip(self)
-
         titleBarWidget = QWidget()
         titleBarWidget.setMaximumHeight(20)
         titleBarWidget.setContentsMargins(0, 0, 0, 0)
-        vBoxLayout.addWidget(titleBarWidget)
-
+        mainVBoxLayout.addWidget(titleBarWidget)
         titleBarWidget.setLayout(titleBarLayout)
 
-        mainWidget.setLayout(vBoxLayout)
+        bottomPanelLayout = QHBoxLayout()
+        mainMenuBtnsLayout = QVBoxLayout()
+        mainMenuBtnsLayout.setContentsMargins(10, 0, 10, 0)
+        addToQueueBtn = QPushButton('Add to Queue')
+        addToQueueBtn.setStyleSheet('background-color: #33546C')
+        mainMenuBtnsLayout.addWidget(addToQueueBtn)
+
+        slidersLayout = QVBoxLayout()
+        bottomPanelLayout.addLayout(slidersLayout)
+        bottomPanelLayout.addLayout(mainMenuBtnsLayout)
+
+        mainWidget.setLayout(mainVBoxLayout)
 
         # self.videoFrame = QLabel()
         self.videoFrame = QLabel()
 
-        vBoxLayout.addWidget(self.videoFrame)
+        mainVBoxLayout.addWidget(self.videoFrame)
+        mainVBoxLayout.addLayout(bottomPanelLayout)
 
         # add sliders
         self.timelineSlider = addSlider('Timeline', 0, self.numFrames - 1, 0)
@@ -189,4 +200,4 @@ class MainWindow(QMainWindow):
                              QtGui.QImage.Format_RGB888).rgbSwapped()
         frameSize = self.videoFrame.size()
         self.videoFrame.setPixmap(QtGui.QPixmap(image).scaled(1920, 1080,
-                                                               QtCore.Qt.KeepAspectRatio))
+                                                              QtCore.Qt.KeepAspectRatio))
