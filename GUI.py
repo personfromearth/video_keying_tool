@@ -79,7 +79,13 @@ class MainWindow(QMainWindow):
         mainMenuBtnsLayout.setContentsMargins(10, 0, 10, 0)
         addToQueueBtn = QPushButton('Add to Queue')
         addToQueueBtn.setStyleSheet('background-color: #33546C')
+        # submit/render btn
+        self.submitButton = QPushButton('Render Matte')
+        self.submitButton.clicked.connect(self.writeMask)
+
         mainMenuBtnsLayout.addWidget(addToQueueBtn)
+        mainMenuBtnsLayout.addWidget(self.submitButton)
+
 
         slidersLayout = QVBoxLayout()
         bottomPanelLayout.addLayout(slidersLayout)
@@ -89,6 +95,8 @@ class MainWindow(QMainWindow):
 
         # self.videoFrame = QLabel()
         self.videoFrame = QLabel()
+
+
 
         mainVBoxLayout.addWidget(self.videoFrame)
         mainVBoxLayout.addLayout(bottomPanelLayout)
@@ -122,9 +130,7 @@ class MainWindow(QMainWindow):
         self.minimizeBtn.setIcon(QtGui.QIcon('icons/minimize.png'))
         self.minimizeBtn.setIconSize(QtCore.QSize(15, 15))
 
-        # submit/render btn
-        self.submitButton = QPushButton('Render Matte')
-        self.submitButton.clicked.connect(self.writeMask)
+
 
         titleBarLayout.addWidget(self.minimizeBtn)
         titleBarLayout.addWidget(self.windowSizeBtn)
@@ -158,7 +164,7 @@ class MainWindow(QMainWindow):
             ret, frame = cap.read()
             if ret:
                 hsv_img = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-                mask = cv2.inRange(hsv_img, (self.hLowSlider.value(), self.sLowSlider.value(), self.vLowSlider.value()),
+                mask = ~cv2.inRange(hsv_img, (self.hLowSlider.value(), self.sLowSlider.value(), self.vLowSlider.value()),
                                    (self.hUpperSlider.value(), self.sUpperSlider.value(), self.vUpperSlider.value()))
                 out.write(cv2.merge((mask, mask, mask)))
             else:
